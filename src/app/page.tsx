@@ -1,103 +1,137 @@
-import Image from "next/image";
+'use client'
+import React from 'react';
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [operation, setOperation] = React.useState('');
+  const [result, setResult] = React.useState('0');
+  const [waitingForOperand, setWaitingForOperand] = React.useState(true);
+  const [memory, setMemory] = React.useState<string[]>([]);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const handleAddResultInOperation = () => {
+    setOperation(result);
+  };
+
+  const clearAll = () => {
+    setOperation('');
+    setResult('0');
+    setWaitingForOperand(true);
+    setMemory([]);
+  };
+
+  const clearEntry = () => {
+    if (result.length > 1) {
+      setResult(result.slice(0, -1));
+    } else {
+      setResult('0');
+      setWaitingForOperand(true);
+    }
+  };
+
+  const handleNumber = (number: string) => {
+    if (waitingForOperand) {
+      setResult(number);
+      setWaitingForOperand(false);
+    } else {
+      setResult(result === '0' ? number : result + number);
+    }
+  };
+
+  const handleDecimal = () => {
+    if (waitingForOperand) {
+      setResult('0.');
+      setWaitingForOperand(false);
+    } else if (result.indexOf('.') === -1) {
+      setResult(result + '.');
+    }
+  };
+
+  const handleOperator = (operator: string) => {
+    if (operator === '%') {
+      const value = parseFloat(result) / 100;
+      setResult(String(value));
+      setWaitingForOperand(true);
+      return;
+    }
+
+    const newMemory = [...memory, result];
+    setMemory(newMemory);
+
+    const newOperation = operation + result + ' ' + operator + ' ';
+    setOperation(newOperation);
+    setResult('0');
+    setWaitingForOperand(true);
+  };
+
+  const toggleSign = () => {
+    const value = parseFloat(result) * -1;
+    setResult(String(value));
+  };
+
+  const calculate = () => {
+    try {
+      const newMemory = [...memory, result];
+      setMemory(newMemory);
+
+      const expression = operation + result;
+      const cleanExpression = expression.replace(/[+\-*/%]\s*$/, '');
+
+      const calculatedResult = new Function('return ' + cleanExpression)();
+
+      setOperation(expression + ' =');
+      setResult('0');
+      setWaitingForOperand(true);
+
+      setResult(String(calculatedResult));
+    } catch (error) {
+      console.error('Calculation error:', error);
+      setResult('Error');
+      setWaitingForOperand(true);
+    }
+  };
+
+  return (
+    <div className="bg-neutral-900 flex justify-center items-center w-screen h-screen">
+      <div className="bg-neutral-700 rounded-xl p-8 shadow-md" style={{ transform: 'scale(1.5)' }}>
+        <div className="bg-slate-500 w-full rounded-lg mb-3 p-2 flex flex-col">
+          <span className="text-white">{operation}</span>
+          <div className="flex items-center">
+            <span className="text-gray-500">=</span>
+            <span 
+              className="text-white ml-1 cursor-pointer"
+              onClick={() => handleAddResultInOperation()} 
+              title={result}
+            >
+              {result}
+            </span>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        <div className="grid grid-cols-4 grid-rows-5 gap-2"> 
+          <button onClick={() => clearEntry()} className="bg-slate-700 hover:bg-slate-600 rounded-lg p-2 text-white transition-colors">CE</button>
+          <button onClick={() => clearAll()} className="bg-slate-700 hover:bg-slate-600 rounded-lg p-2 text-white transition-colors">C</button>
+          <button onClick={() => handleOperator('%')} className="bg-slate-700 hover:bg-slate-600 rounded-lg p-2 text-white transition-colors">%</button>
+          <button onClick={() => handleOperator('/')} className="bg-purple-500 hover:bg-purple-400 rounded-lg p-2 text-white transition-colors">/</button>
+
+          <button onClick={() => handleNumber('7')} className="bg-slate-700 hover:bg-slate-600 rounded-lg p-2 text-white transition-colors">7</button>
+          <button onClick={() => handleNumber('8')} className="bg-slate-700 hover:bg-slate-600 rounded-lg p-2 text-white transition-colors">8</button>
+          <button onClick={() => handleNumber('9')} className="bg-slate-700 hover:bg-slate-600 rounded-lg p-2 text-white transition-colors">9</button>
+          <button onClick={() => handleOperator('*')} className="bg-purple-500 hover:bg-purple-400 rounded-lg p-2 text-white transition-colors">*</button>
+
+          <button onClick={() => handleNumber('4')} className="bg-slate-700 hover:bg-slate-600 rounded-lg p-2 text-white transition-colors">4</button>
+          <button onClick={() => handleNumber('5')} className="bg-slate-700 hover:bg-slate-600 rounded-lg p-2 text-white transition-colors">5</button>
+          <button onClick={() => handleNumber('6')} className="bg-slate-700 hover:bg-slate-600 rounded-lg p-2 text-white transition-colors">6</button>
+          <button onClick={() => handleOperator('-')} className="bg-purple-500 hover:bg-purple-400 rounded-lg p-2 text-white transition-colors">-</button>
+
+          <button onClick={() => handleNumber('1')} className="bg-slate-700 hover:bg-slate-600 rounded-lg p-2 text-white transition-colors">1</button>
+          <button onClick={() => handleNumber('2')} className="bg-slate-700 hover:bg-slate-600 rounded-lg p-2 text-white transition-colors">2</button>
+          <button onClick={() => handleNumber('3')} className="bg-slate-700 hover:bg-slate-600 rounded-lg p-2 text-white transition-colors">3</button>
+          <button onClick={() => handleOperator('+')} className="bg-purple-500 hover:bg-purple-400 rounded-lg p-2 text-white transition-colors">+</button>
+
+          <button onClick={() => toggleSign()} className="bg-slate-700 hover:bg-slate-600 rounded-lg p-2 text-white transition-colors">+/-</button>
+          <button onClick={() => handleNumber('0')} className="bg-slate-700 hover:bg-slate-600 rounded-lg p-2 text-white transition-colors">0</button>
+          <button onClick={() => handleDecimal()} className="bg-slate-700 hover:bg-slate-600 rounded-lg p-2 text-white transition-colors">.</button>
+          <button onClick={() => calculate()} className="bg-purple-500 hover:bg-purple-400 rounded-lg p-2 text-white transition-colors">=</button>
+        </div>
+      </div>
     </div>
   );
 }
